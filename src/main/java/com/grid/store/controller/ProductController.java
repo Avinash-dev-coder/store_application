@@ -2,6 +2,7 @@ package com.grid.store.controller;
 
 import com.grid.store.dto.ProductDto;
 import com.grid.store.service.ProductService;
+import com.grid.store.utilities.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,7 @@ public class ProductController {
     @DeleteMapping("/delete-product/{id}")
     public ResponseEntity<String> deleteProductById(@PathVariable Long id) {
         productService.deleteProductById(id);
-        return new ResponseEntity<>("Product deleted successfully.", HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(Constants.PRODUCT_DELETED, HttpStatus.OK);
 
     }
 }

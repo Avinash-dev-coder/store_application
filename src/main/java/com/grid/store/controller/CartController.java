@@ -3,6 +3,7 @@ package com.grid.store.controller;
 import com.grid.store.dto.CartDto;
 import com.grid.store.dto.CartRequest;
 import com.grid.store.service.CartService;
+import com.grid.store.utilities.Constants;
 import com.grid.store.utilities.Validator;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,14 +27,14 @@ public class CartController {
     }
 
     @PostMapping("/remove-cart-item")
-    public ResponseEntity<CartDto> removeItemFromCart(HttpSession session, @RequestBody  CartRequest cartRequest){
+    public ResponseEntity<CartDto> removeCartItem(HttpSession session, @RequestBody  CartRequest cartRequest){
         Long userId = Validator.getUserId(session);
         CartDto cartDto = cartService.removeItem(userId, cartRequest);
         return new ResponseEntity<>(cartDto, HttpStatus.OK);
     }
 
     @GetMapping("/get-all-cart-item")
-    public ResponseEntity<CartDto> removeItemFromCart(HttpSession session){
+    public ResponseEntity<CartDto> getAllCartItems(HttpSession session){
         Long userId = Validator.getUserId(session);
         CartDto cartDto = cartService.getAllItem(userId);
         return new ResponseEntity<>(cartDto, HttpStatus.OK);
@@ -43,6 +44,6 @@ public class CartController {
     public ResponseEntity<String> removeAllCartItems(HttpSession session){
         Long userId = Validator.getUserId(session);
         cartService.removeAllItem(userId);
-        return new ResponseEntity<>("All items removed from the cart", HttpStatus.OK);
+        return new ResponseEntity<>(Constants.ALL_ITEM_REMOVED, HttpStatus.OK);
     }
 }

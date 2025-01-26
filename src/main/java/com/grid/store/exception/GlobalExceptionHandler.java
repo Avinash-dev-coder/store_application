@@ -50,49 +50,4 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR");
     }
 
-
-
-//    @ExceptionHandler(ProductNotFoundException.class)
-//    public ResponseEntity<String> handleProductNotFoundException(ProductNotFoundException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-//    }
-//
-//    @ExceptionHandler(CartNotFoundException.class)
-//    public ResponseEntity<String> handleCartNotFoundException(CartNotFoundException ex){
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-//    }
-//    @ExceptionHandler(UserNotFoundException.class)
-//    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-//    }
-//
-//    @ExceptionHandler(ResponseStatusException.class)
-//    public ResponseEntity<String> handleResponseStatusException(ResponseStatusException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), ex.getStatusCode());
-//    }
-//
-//    @ExceptionHandler(InsufficientStockException.class)
-//    public ResponseEntity<String> handleInsufficientStockException(InsufficientStockException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
-//    }
-//
-//    @ExceptionHandler(InvalidDetailsException.class)
-//    public ResponseEntity<String> handleInvalidDetailsException(InvalidDetailsException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
-//    }
-//
-//    @ExceptionHandler(UnauthorizedAccessException.class)
-//    public ResponseEntity<String> handleUnauthorizedAccessException(UnauthorizedAccessException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
-//    }
-//
-//    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<String> handleGeneralException(Exception ex) {
-//        return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-//    }
-//
-//    @ExceptionHandler(InvalidProductException.class)
-//    public ResponseEntity<String> handleInvalidProductException(InvalidProductException ex) {
-//        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
-//    }
 }

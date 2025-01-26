@@ -17,9 +17,11 @@ import org.springframework.security.crypto.password.*;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
     @Autowired
     private  PasswordEncoder passwordEncoder;
 
@@ -28,7 +30,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    @Transactional
     @Override
     public void registerUser(UserRequest userRequest) {
         //validate for user object
@@ -74,10 +75,20 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    @Transactional
     private User getUserByEmail(String emailId) {
         return userRepository.findByEmailId(emailId)
                 .orElseThrow(() -> new NotFoundException("No user found with email: " + emailId));
+    }
+
+    @Override
+    public  User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("No user found with UserId: " + userId));
+    }
+
+    @Override
+    public User saveUser(User user) {
+        return userRepository.save(user);
     }
 
 

@@ -1,6 +1,7 @@
 package com.grid.store.entity;
 
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +10,7 @@ import java.math.BigInteger;
 
 @Setter
 @Getter
+@EqualsAndHashCode
 @Entity
 @Table(name = "product")
 public class Product{

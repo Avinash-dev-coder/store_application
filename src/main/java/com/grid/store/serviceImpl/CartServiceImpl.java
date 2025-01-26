@@ -14,34 +14,32 @@ import com.grid.store.repository.ProductRepository;
 import com.grid.store.repository.UserRepository;
 import com.grid.store.service.CartService;
 import com.grid.store.service.ProductService;
+import com.grid.store.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
 
 
 @Service
+@Transactional
 public class CartServiceImpl implements CartService {
 
     @Autowired
-    private  UserRepository userRepository;
-    @Autowired
     private  CartRepository cartRepository;
     @Autowired
-    private  ProductRepository productRepository;
+    private UserService userService;
     @Autowired
     private ProductService productService;
 
 
     @Override
-    public CartDto addItem(long userId, CartRequest cartRequest) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Please login to add item to the cart"));
+    public CartDto addItem(Long userId, CartRequest cartRequest) {
+        User user = getUser(userId);
 
-        Product product = productRepository.findById(cartRequest.getProductId())
-                .orElseThrow(() -> new NotFoundException("No Product found with ID: " + cartRequest.getProductId()));
-
+        Product product = productService.getProduct(cartRequest.getProductId());
         Cart cart = user.getCart();
 
         // If no cart exists, create a new one and associate with the user
@@ -56,7 +54,7 @@ public class CartServiceImpl implements CartService {
 
         if (existingItemOpt.isPresent()) {
             CartItem existingItem = existingItemOpt.get();
-            if(!productService.checkProductStocks(existingItem.getProduct(), existingItem.getQuantity())){
+            if(!productService.checkProductStocks(existingItem.getProduct(), cartRequest.getQuantity())){
                 throw new BadRequestException("Insufficient stock for product ID " +
                         product.getProductId() + ". Available: " + product.getAvailable() +
                         ", Requested: " + cartRequest.getQuantity());
@@ -70,7 +68,7 @@ public class CartServiceImpl implements CartService {
         cartItem.setQuantity(cartRequest.getQuantity());
         cart.getCartItemList().add(cartItem);
         user.setCart(cart);
-        return CartConverter.convertEntityToDto(userRepository.save(user).getCart());
+        return CartConverter.convertEntityToDto(userService.saveUser(user).getCart());
 
     }
 
@@ -78,13 +76,10 @@ public class CartServiceImpl implements CartService {
 
 
     @Override
-    public CartDto removeItem(long userId, CartRequest cartRequest) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Please login to add item to the cart"));
-
-        Product product = productRepository.findById(cartRequest.getProductId())
-                .orElseThrow(() -> new NotFoundException("No Product found with ID: " + cartRequest.getProductId()));
-
+    public CartDto removeItem(Long userId, CartRequest cartRequest) {
+        User user = getUser(userId);
+        //get requested product
+        Product product = productService.getProduct(cartRequest.getProductId());
         Cart cart = user.getCart();
         // Check if the product already exists in the cart (by product ID)
         Optional<CartItem> existingItemOpt = cart.getCartItemList().stream()
@@ -96,10 +91,9 @@ public class CartServiceImpl implements CartService {
             CartItem existingItem = existingItemOpt.get();
             if(existingItem.getQuantity() > cartRequest.getQuantity()){
                 existingItem.setQuantity(existingItem.getQuantity() - cartRequest.getQuantity());
-            }else{
+            }else {
                 cart.getCartItemList().remove(existingItem);
             }
-            //Todo update product availability
         } else {
             throw new NotFoundException("No Product found with ID: " + cartRequest.getProductId() + " in the cart");
         }
@@ -108,10 +102,8 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartDto getAllItem(long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Please login to add item to the cart"));
-
+    public CartDto getAllItem(Long userId) {
+        User user = getUser(userId);
         Cart cart = user.getCart();
 
         // If no cart exists, create a new one and associate with the user
@@ -122,10 +114,8 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public void removeAllItem(long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Please login to add item to the cart"));
-
+    public void removeAllItem(Long userId) {
+        User user = getUser(userId);
         Cart cart = user.getCart();
         // If no cart exists, create a new one and associate with the user
         if (cart == null || cart.getCartItemList().isEmpty()) {
@@ -134,5 +124,24 @@ public class CartServiceImpl implements CartService {
         cartRepository.delete(cart);
 
     }
+
+    @Override
+    public Cart getCart(Long cartId) {
+        return cartRepository.findById(cartId)
+                .orElseThrow(() -> new NotFoundException("No cart found for the user"));
+    }
+
+    @Override
+    public void saveCart(Cart cart){
+        cartRepository.save(cart);
+    }
+
+
+    private User getUser(Long userId){
+        return userService.getUserById(userId);
+    }
+
+
+
 
 }

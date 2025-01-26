@@ -2,6 +2,7 @@ package com.grid.store.controller;
 
 import com.grid.store.dto.OrderDto;
 import com.grid.store.service.OrderService;
+import com.grid.store.utilities.Constants;
 import com.grid.store.utilities.Validator;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ public class OrderController {
                                               @RequestParam("orderId") Long orderId){
         Long userId = Validator.getUserId(httpSession);
         orderService.cancelOrder(userId, orderId);
-        return new ResponseEntity<>("Order cancelled successfully", HttpStatus.OK);
+        return new ResponseEntity<>(Constants.ORDER_CANCELLED, HttpStatus.OK);
     }
 
     @GetMapping("/get-all-orders")

@@ -11,6 +11,8 @@ public interface ProductService {
 
     public ProductDto getProductById(Long productId);
 
+    public Product getProduct(Long productId);
+
     public void updateProductAvailability(Long productId, int quantity);
 
     public ProductDto addProduct(ProductDto productDto);
