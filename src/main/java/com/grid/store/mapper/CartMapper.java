@@ -1,15 +1,20 @@
-package com.grid.store.converter;
+package com.grid.store.mapper;
 
 import com.grid.store.dto.CartDto;
 import com.grid.store.dto.CartItemDto;
 import com.grid.store.entity.Cart;
 import com.grid.store.entity.CartItem;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class CartConverter {
-    public static CartItemDto convertEntityToDto(CartItem cartItem) {
+@Mapper(componentModel = "spring")
+public abstract class CartMapper {
+
+
+    public CartItemDto cartItemToCartItemDto(CartItem cartItem){
         CartItemDto cartItemDto = new CartItemDto();
         cartItemDto.setProductName(cartItem.getProduct().getTitle());
         cartItemDto.setQuantity(cartItem.getQuantity());
@@ -17,10 +22,11 @@ public class CartConverter {
         return cartItemDto;
     }
 
-    public static CartDto convertEntityToDto(Cart cart) {
+
+    public CartDto cartToCartDto(Cart cart){
         CartDto cartDto = new CartDto();
         List<CartItemDto> cartItemDtoList = cart.getCartItemList().stream()
-                .map(CartConverter::convertEntityToDto)
+                .map(this::cartItemToCartItemDto)
                 .toList();
 
         cartDto.setCartItemDtoList(cartItemDtoList);
@@ -28,6 +34,4 @@ public class CartConverter {
 
         return cartDto;
     }
-
-
 }

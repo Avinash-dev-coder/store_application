@@ -1,10 +1,12 @@
 package com.grid.store.serviceImpl;
 
 import com.grid.store.dto.CartDto;
+import com.grid.store.dto.CartItemDto;
 import com.grid.store.dto.CartRequest;
 import com.grid.store.entity.*;
 import com.grid.store.exception.BadRequestException;
 import com.grid.store.exception.NotFoundException;
+import com.grid.store.mapper.CartMapper;
 import com.grid.store.repository.CartRepository;
 import com.grid.store.service.ProductService;
 import com.grid.store.service.UserService;
@@ -15,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,13 +34,18 @@ class CartServiceImplTest {
     @Mock
     private ProductService productService;
 
+    @Mock
+    private CartMapper cartMapper;
+
     @InjectMocks
     private CartServiceImpl cartService;
 
     private User user;
     private Cart cart;
+    private CartDto cartDto;
     private Product product;
     private CartItem cartItem;
+    private CartItemDto cartItemDto;
     private CartRequest cartRequest;
 
     @BeforeEach
@@ -55,9 +61,18 @@ class CartServiceImplTest {
         cartItem.setProduct(product);
         cartItem.setQuantity(2);
 
+        cartItemDto = new CartItemDto();
+        cartItemDto.setProductName(product.getTitle());
+        cartItemDto.setQuantity(2);
+
+
         cart = new Cart();
         cart.setCartId(1L);
         cart.setCartItemList(new ArrayList<>(List.of(cartItem)));
+
+        cartDto = new CartDto();
+        cartDto.setCartItemDtoList(new ArrayList<>(List.of(cartItemDto)));
+
 
         user = new User();
         user.setUserId(1L);
@@ -66,6 +81,11 @@ class CartServiceImplTest {
         cartRequest = new CartRequest();
         cartRequest.setProductId(1L);
         cartRequest.setQuantity(3);
+
+//        when(cartMapper.cartToCartDto(cart)).thenReturn(cartDto);
+        when(cartMapper.cartToCartDto(any(Cart.class))).thenReturn(cartDto);
+
+
     }
 
     @Test
@@ -73,14 +93,18 @@ class CartServiceImplTest {
         when(userService.getUserById(1L)).thenReturn(user);
         when(productService.getProduct(1L)).thenReturn(product);
         when(productService.checkProductStocks(product, 3)).thenReturn(true);
-        when(cartRepository.save(cart)).thenReturn(cart);
+
+        when(cartRepository.save(any(Cart.class))).thenReturn(cart);
+
         when(userService.saveUser(user)).thenReturn(user);
 
-        CartDto cartDto = cartService.addItem(1L, cartRequest);
+        CartDto expectedCartDto = cartService.addItem(1L, cartRequest);
 
-        assertNotNull(cartDto);
+        assertNotNull(expectedCartDto);
+
         verify(userService).saveUser(user);
     }
+
 
     @Test
     void testAddItem_Success_UpdateExistingItem() {
@@ -89,11 +113,11 @@ class CartServiceImplTest {
         when(userService.getUserById(1L)).thenReturn(user);
         when(productService.getProduct(1L)).thenReturn(product);
         when(productService.checkProductStocks(product, 5)).thenReturn(true);
-        when(cartRepository.save(cart)).thenReturn(cart);
+        when(userService.saveUser(user)).thenReturn(user);
 
-        CartDto cartDto = cartService.addItem(1L, cartRequest);
+        CartDto expectedCartDto = cartService.addItem(1L, cartRequest);
 
-        assertNotNull(cartDto);
+        assertNotNull(expectedCartDto);
     }
 
     @Test

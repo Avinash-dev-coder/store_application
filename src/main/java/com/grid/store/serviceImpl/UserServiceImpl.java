@@ -6,12 +6,16 @@ import com.grid.store.exception.BadRequestException;
 import com.grid.store.exception.ConflictException;
 import com.grid.store.exception.NotFoundException;
 import com.grid.store.exception.UnauthorizedException;
+import com.grid.store.mapper.UserMapper;
 import com.grid.store.repository.UserRepository;
 import com.grid.store.service.UserService;
+import com.grid.store.utilities.Constants;
 import com.grid.store.utilities.Validator;
 
 import jakarta.servlet.http.HttpSession;
+import org.mapstruct.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.*;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,28 +23,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
-
-    private final UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private  PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private UserMapper userMapper;
 
     @Override
     public void registerUser(UserRequest userRequest) {
         //validate for user object
         validateUserDetails(userRequest);
-        //check if email id already exists
-        checkForExistingUser(userRequest.getEmailId());
+        try {
+            // Check if email id already exists
+            checkForExistingUser(userRequest.getEmailId());
 
-        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
-        userRequest.setPassword(encodedPassword);
-        User user =  convertDtoToEntity(userRequest);
-        userRepository.save(user);
+            String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
+            userRequest.setPassword(encodedPassword);
+            User user = userMapper.userRequestToUser(userRequest);
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException(Constants.EMAIL_ID_IS_ALREADY_REGISTERED);
+        }
+
     }
 
 
@@ -58,32 +65,32 @@ public class UserServiceImpl implements UserService {
 
     private void validateUserDetails(UserRequest userRequest) {
         if (userRequest == null) {
-            throw new BadRequestException("User cannot be null.");
+            throw new BadRequestException(Constants.USER_CANNOT_BE_NULL);
         }
         if (Validator.isBlank(userRequest.getEmailId())) {
-            throw new BadRequestException("Email ID cannot be blank.");
+            throw new BadRequestException(Constants.EMAIL_ID_CANNOT_BE_BLANK);
         }
         if (Validator.isBlank(userRequest.getPassword())) {
-            throw new BadRequestException("Password cannot be blank.");
+            throw new BadRequestException(Constants.PASSWORD_CANNOT_BE_BLANK);
         }
     }
 
     private void checkForExistingUser(String emailId){
         if (userRepository.existsByEmailId(emailId)) {
-            throw new ConflictException("Email ID is already registered.");
+            throw new ConflictException(Constants.EMAIL_ID_IS_ALREADY_REGISTERED);
         }
     }
 
 
     private User getUserByEmail(String emailId) {
         return userRepository.findByEmailId(emailId)
-                .orElseThrow(() -> new NotFoundException("No user found with email: " + emailId));
+                .orElseThrow(() -> new NotFoundException(Constants.NO_USER_FOUND_WITH_EMAIL + emailId));
     }
 
     @Override
     public  User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("No user found with UserId: " + userId));
+                .orElseThrow(() -> new NotFoundException(Constants.NO_USER_FOUND_WITH_USER_ID + userId));
     }
 
     @Override
@@ -95,23 +102,9 @@ public class UserServiceImpl implements UserService {
     private void validatePassword(String enteredPassword, User storedUser) {
         boolean passwordMatches = passwordEncoder.matches(enteredPassword, storedUser.getPassword());
         if (!passwordMatches) {
-            throw new UnauthorizedException("Invalid password.");
+            throw new UnauthorizedException(Constants.INVALID_PASSWORD);
         }
     }
-
-    private User convertDtoToEntity(UserRequest userRequest){
-        User user = new User();
-        user.setEmailId(userRequest.getEmailId());
-        user.setPassword(userRequest.getPassword());
-        return user;
-    }
-
-    private UserRequest convertEntityToDto(User user){
-        UserRequest userRequest = new UserRequest();
-        userRequest.setEmailId(user.getEmailId());
-        return userRequest;
-    }
-
 
 
 }

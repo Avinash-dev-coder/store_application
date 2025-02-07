@@ -17,7 +17,7 @@ import java.util.List;
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
     private Long userId;
-    @Column(name = "email_id")
+    @Column(name = "email_id", unique = true)
     private String emailId;
     @Column(name = "password")
     private String password;

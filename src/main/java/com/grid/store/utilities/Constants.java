@@ -20,4 +20,13 @@ public class Constants {
         public static final String PLEASE_ADD_ITEMS_TO_PLACE_ORDER = "Please add items to place order";
         public static final String NO_ORDER_FOUND_BY_THIS_ID = "No order found by this Id: ";
         public static final String ORDER_HAS_ALREADY_BEEN = "Order has already been: ";
+        public static final String NO_CART_FOUND_FOR_THE_USER = "No cart found for the user";
+        public static final String NO_PRODUCT_FOUND_IN_THE_CART = "No product found in the cart";
+    public static final String EMAIL_ID_IS_ALREADY_REGISTERED = "Email ID is already registered.";
+        public static final String USER_CANNOT_BE_NULL = "User cannot be null.";
+        public static final String EMAIL_ID_CANNOT_BE_BLANK = "Email ID cannot be blank.";
+        public static final String PASSWORD_CANNOT_BE_BLANK = "Password cannot be blank.";
+        public static final String NO_USER_FOUND_WITH_EMAIL = "No user found with email: ";
+        public static final String NO_USER_FOUND_WITH_USER_ID = "No user found with UserId: ";
+        public static final String INVALID_PASSWORD = "Invalid password.";
 }

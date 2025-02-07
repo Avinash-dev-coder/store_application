@@ -3,6 +3,7 @@ package com.grid.store.serviceImpl;
 import com.grid.store.dto.OrderDto;
 import com.grid.store.entity.*;
 import com.grid.store.exception.*;
+import com.grid.store.mapper.OrderMapper;
 import com.grid.store.repository.*;
 import com.grid.store.service.CartService;
 import com.grid.store.service.OrderService;
@@ -32,11 +33,16 @@ public class OrderServiceImpl implements OrderService {
     private UserService userService;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private OrderMapper orderMapper;
 
 
     @Override
     public OrderDto placeOrder(Long userId) {
         User user = getUser(userId);
+        if(user.getCart() == null){
+            throw new NotFoundException(Constants.NO_CART_FOUND_FOR_THE_USER);
+        }
 
         Cart cart = cartService.getCart(user.getCart().getCartId());
 
@@ -45,34 +51,21 @@ public class OrderServiceImpl implements OrderService {
         }
 
         List<OrderItem> orderItemList = new ArrayList<>();
-        cart.getCartItemList().forEach(cartItem -> {
-            OrderItem orderItem = new OrderItem();
-            if (!productService.checkProductStocks(cartItem.getProduct(), cartItem.getQuantity())) {
-                Product product = cartItem.getProduct();
-                throw new BadRequestException("Insufficient stock for product ID " +
-                        product.getProductId() + ". Available: " + product.getAvailable() +
-                        ", Requested: " + cartItem.getQuantity());
-            }
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setQuantity(cartItem.getQuantity());
-            orderItemList.add(orderItem);
-        });
+        synchronized (this){
+            cart.getCartItemList().forEach(cartItem -> {
+                OrderItem orderItem = new OrderItem();
+                if (!productService.checkProductStocks(cartItem.getProduct(), cartItem.getQuantity())) {
+                    Product product = cartItem.getProduct();
+                    throw new BadRequestException(Constants.INSUFFICIENT_STOCK_FOR_PRODUCT_ID +
+                            product.getProductId() + ". Available: " + product.getAvailable() +
+                            ", Requested: " + cartItem.getQuantity());
+                }
+                orderItem.setProduct(cartItem.getProduct());
+                orderItem.setQuantity(cartItem.getQuantity());
+                orderItemList.add(orderItem);
+            });
+        }
 
-//        // Convert CartItems into OrderItems
-//        List<OrderItem> orderItemList = cart.getCartItemList().stream()
-//                .map(cartItem -> {
-//                    OrderItem orderItem = new OrderItem();
-//                    if(!productService.checkProductStocks(cartItem.getProduct(), cartItem.getQuantity())){
-//                        Product product = cartItem.getProduct();
-//                        throw new BadRequestException(Constants.INSUFFICIENT_STOCK_FOR_PRODUCT_ID +
-//                                product.getProductId() + ". Available: " + product.getAvailable() +
-//                                ", Requested: " + cartItem.getQuantity());
-//                    }
-//                    orderItem.setProduct(cartItem.getProduct());
-//                    orderItem.setQuantity(cartItem.getQuantity());
-//                    return orderItem;
-//                })
-//                .collect(Collectors.toList());
 
 
         Order order = new Order();
@@ -86,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
         cart.getCartItemList().clear();
         cartService.saveCart(cart);
 
-        return convertEntityToDto(order);
+        return orderMapper.orderToOrderDto(order);
     }
 
     //to calculate the total price of the order
@@ -120,18 +113,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderDto> getAllOrdersByUserId(Long userId) {
         User user = getUser(userId);
-        return user.getOrdersList().stream().map(this :: convertEntityToDto).toList();
+        return user.getOrdersList().stream().map(orderMapper :: orderToOrderDto).toList();
 
     }
 
-    private OrderDto convertEntityToDto(Order order) {
-        OrderDto orderDto = new OrderDto();
-        orderDto.setOrderId(order.getOrderId());
-        orderDto.setTotalPrice(order.getTotalPrice());
-        orderDto.setStatus(order.getStatus());
-        orderDto.setCreateTimestamp(order.getCreateTimestamp());
-        return orderDto;
-    }
 
     private User getUser(Long userId){
         return userService.getUserById(userId);

@@ -1,6 +1,5 @@
 package com.grid.store.serviceImpl;
 
-import com.grid.store.converter.CartConverter;
 import com.grid.store.dto.CartDto;
 import com.grid.store.dto.CartRequest;
 import com.grid.store.entity.Cart;
@@ -9,12 +8,12 @@ import com.grid.store.entity.Product;
 import com.grid.store.entity.User;
 import com.grid.store.exception.BadRequestException;
 import com.grid.store.exception.NotFoundException;
+import com.grid.store.mapper.CartMapper;
 import com.grid.store.repository.CartRepository;
-import com.grid.store.repository.ProductRepository;
-import com.grid.store.repository.UserRepository;
 import com.grid.store.service.CartService;
 import com.grid.store.service.ProductService;
 import com.grid.store.service.UserService;
+import com.grid.store.utilities.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,44 +32,56 @@ public class CartServiceImpl implements CartService {
     private UserService userService;
     @Autowired
     private ProductService productService;
+    @Autowired
+    private CartMapper cartMapper;
 
 
     @Override
     public CartDto addItem(Long userId, CartRequest cartRequest) {
         User user = getUser(userId);
 
+        // Fetch the product from the database (managed entity)
         Product product = productService.getProduct(cartRequest.getProductId());
+        if (product == null) {
+            throw new NotFoundException(Constants.PRODUCT_NOT_FOUND_WITH_ID + cartRequest.getProductId());
+        }
+
         Cart cart = user.getCart();
 
-        // If no cart exists, create a new one and associate with the user
+        // If no cart exists, create a new one
         if (cart == null) {
             cart = new Cart();
         }
 
-        // Check if the product already exists in the cart (by product ID)
+        // Check if the product already exists in the cart
         Optional<CartItem> existingItemOpt = cart.getCartItemList().stream()
                 .filter(item -> Objects.equals(item.getProduct().getProductId(), cartRequest.getProductId()))
                 .findFirst();
 
         if (existingItemOpt.isPresent()) {
             CartItem existingItem = existingItemOpt.get();
-            if(!productService.checkProductStocks(existingItem.getProduct(), cartRequest.getQuantity())){
+            if (!productService.checkProductStocks(existingItem.getProduct(), cartRequest.getQuantity())) {
                 throw new BadRequestException("Insufficient stock for product ID " +
                         product.getProductId() + ". Available: " + product.getAvailable() +
                         ", Requested: " + cartRequest.getQuantity());
             }
             existingItem.setQuantity(cartRequest.getQuantity());
-            return CartConverter.convertEntityToDto(cartRepository.save(cart));
+        } else {
+            if (!productService.checkProductStocks(product, cartRequest.getQuantity())) {
+                throw new BadRequestException("Insufficient stock for product ID " +
+                        product.getProductId() + ". Available: " + product.getAvailable() +
+                        ", Requested: " + cartRequest.getQuantity());
+            }
+            CartItem cartItem = new CartItem();
+            cartItem.setProduct(product); // Managed entity
+            cartItem.setQuantity(cartRequest.getQuantity());
+            cart.getCartItemList().add(cartItem);
         }
-        // Add a new CartItem if it doesn't already exist
-        CartItem cartItem = new CartItem();
-        cartItem.setProduct(product);
-        cartItem.setQuantity(cartRequest.getQuantity());
-        cart.getCartItemList().add(cartItem);
-        user.setCart(cart);
-        return CartConverter.convertEntityToDto(userService.saveUser(user).getCart());
 
+        user.setCart(cart);
+        return cartMapper.cartToCartDto(userService.saveUser(user).getCart());
     }
+
 
 
 
@@ -97,7 +108,7 @@ public class CartServiceImpl implements CartService {
         } else {
             throw new NotFoundException("No Product found with ID: " + cartRequest.getProductId() + " in the cart");
         }
-        return CartConverter.convertEntityToDto(cartRepository.save(cart));
+        return  cartMapper.cartToCartDto(cartRepository.save(cart));
 
     }
 
@@ -108,9 +119,9 @@ public class CartServiceImpl implements CartService {
 
         // If no cart exists, create a new one and associate with the user
         if (cart == null || cart.getCartItemList().isEmpty()) {
-            throw new NotFoundException("No product found in the cart");
+            throw new NotFoundException(Constants.NO_PRODUCT_FOUND_IN_THE_CART);
         }
-        return CartConverter.convertEntityToDto(cart);
+        return cartMapper.cartToCartDto(cart);
     }
 
     @Override
@@ -119,7 +130,7 @@ public class CartServiceImpl implements CartService {
         Cart cart = user.getCart();
         // If no cart exists, create a new one and associate with the user
         if (cart == null || cart.getCartItemList().isEmpty()) {
-            throw new NotFoundException("No product found in the cart");
+            throw new NotFoundException(Constants.NO_PRODUCT_FOUND_IN_THE_CART);
         }
         cartRepository.delete(cart);
 
@@ -128,7 +139,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public Cart getCart(Long cartId) {
         return cartRepository.findById(cartId)
-                .orElseThrow(() -> new NotFoundException("No cart found for the user"));
+                .orElseThrow(() -> new NotFoundException(Constants.NO_CART_FOUND_FOR_THE_USER));
     }
 
     @Override
@@ -140,8 +151,6 @@ public class CartServiceImpl implements CartService {
     private User getUser(Long userId){
         return userService.getUserById(userId);
     }
-
-
 
 
 }

@@ -23,8 +23,6 @@ public class Product{
     @Column(name = "title")
     private String title;
 
-//    @OneToOne(cascade = CascadeType.ALL)
-//    @JoinColumn(name = "quantity_id") // Assuming this is the foreign key column in the "product" table
     @Column(name = "available")
     private int available;
 

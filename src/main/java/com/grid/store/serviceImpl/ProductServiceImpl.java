@@ -1,10 +1,10 @@
 package com.grid.store.serviceImpl;
 
-import com.grid.store.converter.ProductConverter;
 import com.grid.store.dto.ProductDto;
 import com.grid.store.entity.Product;
 import com.grid.store.exception.BadRequestException;
 import com.grid.store.exception.NotFoundException;
+import com.grid.store.mapper.ProductMapper;
 import com.grid.store.repository.ProductRepository;
 import com.grid.store.service.ProductService;
 import com.grid.store.utilities.Constants;
@@ -26,12 +26,12 @@ import java.util.stream.Collectors;
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     @Autowired
-    public ProductServiceImpl(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private ProductMapper productMapper;
+
 
     @Override
     public List<ProductDto> getAllProduct() {
@@ -40,7 +40,7 @@ public class ProductServiceImpl implements ProductService {
             throw new ResponseStatusException(HttpStatus.NO_CONTENT, Constants.NO_PRODUCTS_FOUND);
         }
         return products.stream()
-                .map(ProductConverter :: convertEntityToDto)
+                .map(productMapper :: productToProductDto)
                 .collect(Collectors.toList());
 
     }
@@ -49,12 +49,12 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(Constants.PRODUCT_WITH_ID + id + Constants.NOT_FOUND));
-        return ProductConverter.convertEntityToDto(product);
+        return productMapper.productToProductDto(product);
     }
 
     @Override
     public Product getProduct(Long id) {
-        return ProductConverter.convertDtoToEntity(getProductById(id));
+        return productMapper.productDtoToProduct(getProductById(id));
     }
 
     @Override
@@ -76,8 +76,9 @@ public class ProductServiceImpl implements ProductService {
         //validate product for bad request
         validateProduct(productDto);
         //save the product
-        Product product = ProductConverter.convertDtoToEntity(productDto);
-        return ProductConverter.convertEntityToDto(productRepository.save(product));
+        Product product = productMapper.productDtoToProduct(productDto);
+        Product savedProduct = productRepository.save(product);
+        return productMapper.productToProductDto(savedProduct);
     }
 
 

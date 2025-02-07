@@ -1,10 +1,10 @@
 package com.grid.store.serviceImpl;
 
-import com.grid.store.converter.ProductConverter;
 import com.grid.store.dto.ProductDto;
 import com.grid.store.entity.Product;
 import com.grid.store.exception.BadRequestException;
 import com.grid.store.exception.NotFoundException;
+import com.grid.store.mapper.ProductMapper;
 import com.grid.store.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +24,9 @@ class ProductServiceImplTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private ProductMapper productMapper;
+
     @InjectMocks
     private ProductServiceImpl productService;
 
@@ -40,7 +43,14 @@ class ProductServiceImplTest {
         product.setPrice(new BigDecimal("100"));
         product.setAvailable(10);
 
-        productDto = ProductConverter.convertEntityToDto(product);
+        productDto = new ProductDto();
+        productDto.setProductId(1L);
+        productDto.setTitle("Test Product");
+        productDto.setPrice(new BigDecimal("100"));
+        productDto.setAvailable(10);
+
+        when(productMapper.productToProductDto(product)).thenReturn(productDto);
+        when(productMapper.productDtoToProduct(productDto)).thenReturn(product);
     }
 
     @Test
@@ -72,7 +82,6 @@ class ProductServiceImplTest {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
         ProductDto retrievedProduct = productService.getProductById(1L);
-
         assertNotNull(retrievedProduct);
         assertEquals("Test Product", retrievedProduct.getTitle());
         verify(productRepository, times(1)).findById(1L);
