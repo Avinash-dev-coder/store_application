@@ -29,4 +29,7 @@ public class Product{
     @Column(name = "price")
     private BigDecimal price = new BigDecimal(BigInteger.ZERO);
 
+    @Version
+    private int version;
+
 }

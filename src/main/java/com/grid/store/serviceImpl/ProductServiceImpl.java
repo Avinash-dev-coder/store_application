@@ -11,6 +11,7 @@ import com.grid.store.utilities.Constants;
 import com.grid.store.utilities.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +69,11 @@ public class ProductServiceImpl implements ProductService {
                     + product.getAvailable() + ", Requested: " + quantity);
         }
         product.setAvailable(product.getAvailable() - quantity);
-        productRepository.save(product);
+        try {
+            productRepository.save(product);
+        }catch (ObjectOptimisticLockingFailureException e){
+            throw new BadRequestException("Invalid quantity");
+        }
     }
 
     @Override
@@ -77,6 +82,7 @@ public class ProductServiceImpl implements ProductService {
         validateProduct(productDto);
         //save the product
         Product product = productMapper.productDtoToProduct(productDto);
+        product.setProductId(null);
         Product savedProduct = productRepository.save(product);
         return productMapper.productToProductDto(savedProduct);
     }

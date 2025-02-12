@@ -1,7 +1,9 @@
 package com.grid.store.exception;
 
-public class ConflictException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class ConflictException extends BaseException {
     public ConflictException(String message) {
-        super(message);
+        super(message, HttpStatus.CONFLICT, "CONFLICT");
     }
 }

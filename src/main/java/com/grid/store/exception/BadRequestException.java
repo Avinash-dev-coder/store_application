@@ -1,7 +1,9 @@
 package com.grid.store.exception;
 
-public class BadRequestException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class BadRequestException extends BaseException {
     public BadRequestException(String message) {
-        super(message);
+        super(message, HttpStatus.BAD_REQUEST, "BAD_REQUEST");
     }
 }
